@@ -1,5 +1,5 @@
 // Codex edit (2025-10-02): Refactored RippleGrid into a vanilla JS helper and added curvature/interaction controls.
-import { Renderer, Program, Triangle, Mesh } from './node_modules/ogl/src/index.js';
+import { Renderer, Program, Triangle, Mesh } from '../node_modules/ogl/src/index.js';
 
 const clamp01 = (value) => Math.min(1, Math.max(0, value));
 

@@ -1299,7 +1299,7 @@
 
         function ensureRippleGridModule() {
             if (!rippleGridState.modulePromise) {
-                rippleGridState.modulePromise = import('./RippleGrid_WebGL/RippleGrid.js')
+                rippleGridState.modulePromise = import('./RippleGrid_WebGL/Grid.js')
                     .then((module) => {
                         rippleGridState.module = module;
                         return module;
