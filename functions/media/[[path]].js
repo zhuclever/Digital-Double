@@ -1,11 +1,30 @@
-// --- Helper Function ---
-// Both functions will use this
+// --- Helper Functions ---
+
 function guessContentType(name) {
   if (name.endsWith(".mp4")) return "video/mp4";
   if (name.endsWith(".webm")) return "video/webm";
   if (name.endsWith(".mov")) return "video/quicktime";
   if (name.endsWith(".webp")) return "image/webp";
   return "application/octet-stream";
+}
+
+// Helper to add CORS headers to a response
+function addCorsHeaders(headers) {
+  // Allow requests from any origin
+  headers.set("Access-Control-Allow-Origin", "*");
+  // Allow GET, HEAD, and OPTIONS methods
+  headers.set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+  // Allow the 'Range' header, essential for video streaming
+  headers.set("Access-Control-Allow-Headers", "Range");
+  return headers;
+}
+
+// --- OPTIONS Handler (for Preflight Requests) ---
+// Browsers send this "preflight" request first to ask for permission
+export async function onRequestOptions(context) {
+  const headers = new Headers();
+  addCorsHeaders(headers);
+  return new Response(null, { headers });
 }
 
 // --- HEAD Handler ---
@@ -31,10 +50,12 @@ export async function onRequestHead(context) {
   headers.set("Cache-Control", "public, max-age=3600");
   headers.set("Accept-Ranges", "bytes"); // Tell client we support ranges
 
-  // force content-type if missing
   if (!headers.get("Content-Type")) {
     headers.set("Content-Type", guessContentType(key));
   }
+  
+  // *** ADD CORS ***
+  addCorsHeaders(headers);
 
   return new Response(null, { headers });
 }
@@ -52,11 +73,9 @@ export async function onRequestGet(context) {
 
   const bucket = env["digital-double-videos"];
 
-  // R2 will automatically handle Range parsing and conditional
-  // requests (If-None-Match) when you pass the headers.
   const object = await bucket.get(key, {
-    range: request.headers,   // Automatically handles Range
-    onlyIf: request.headers,  // Automatically handles If-None-Match, etc.
+    range: request.headers,
+    onlyIf: request.headers,
   });
 
   if (!object) {
@@ -65,13 +84,12 @@ export async function onRequestGet(context) {
 
   // Handle 304 Not Modified (for caching)
   if (object.status === 304) {
-    return new Response(null, {
-      status: 304,
-      headers: {
-        "Cache-Control": "public, max-age=3600",
-        "ETag": object.httpEtag,
-      },
-    });
+    const headers = new Headers();
+    headers.set("Cache-Control", "public, max-age=3600");
+    headers.set("ETag", object.httpEtag);
+    // *** ADD CORS ***
+    addCorsHeaders(headers);
+    return new Response(null, { status: 304, headers });
   }
 
   // --- Build the 200 (full) or 206 (partial) response ---
@@ -80,15 +98,12 @@ export async function onRequestGet(context) {
   headers.set("Cache-Control", "public, max-age=3600");
   headers.set("Accept-Ranges", "bytes");
 
-  // content-type fallback
   if (!headers.get("Content-Type")) {
     headers.set("Content-Type", guessContentType(key));
   }
 
-  // R2 automatically sets object.range if a range was served
   const status = object.range ? 206 : 200;
 
-  // Add Content-Range header if it was a partial request
   if (object.range) {
     const { offset, length, size } = object.range;
     headers.set(
@@ -96,6 +111,9 @@ export async function onRequestGet(context) {
       `bytes ${offset}-${offset + length - 1}/${size}`
     );
   }
+  
+  // *** ADD CORS ***
+  addCorsHeaders(headers);
 
   return new Response(object.body, {
     status,
