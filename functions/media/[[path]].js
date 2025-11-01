@@ -1,8 +1,6 @@
 export async function onRequest(context) {
   const { request, env, params } = context;
   const segments = params.path || [];
-  // e.g. /media/Parag/in-worlds_Compressed.mp4
-  // -> ["Parag", "in-worlds_Compressed.mp4"]
   const key = segments.join("/");
 
   if (!key) {
@@ -29,31 +27,32 @@ export async function onRequest(context) {
     return new Response(null, { headers });
   }
 
-  // --- handle Range ---
-  const rangeHeader = request.headers.get("Range");
-  let getOptions = {};
-  if (rangeHeader && rangeHeader.startsWith("bytes=")) {
-    // e.g. "bytes=0-" or "bytes=1000-2000"
-    const [startStr, endStr] = rangeHeader.replace("bytes=", "").split("-");
-    const start = Number(startStr);
-    const end = endStr ? Number(endStr) : undefined;
+  // --- SIMPLIFIED GET REQUEST ---
+  // R2 will automatically handle Range parsing and conditional
+  // requests (If-None-Match) when you pass the headers.
+  const object = await bucket.get(key, {
+    range: request.headers,   // Automatically handles Range
+    onlyIf: request.headers,  // Automatically handles If-None-Match, etc.
+  });
 
-    if (!Number.isNaN(start)) {
-      if (typeof end === "number" && !Number.isNaN(end)) {
-        // exact range
-        getOptions = { range: { offset: start, length: end - start + 1 } };
-      } else {
-        // from start to end of file
-        getOptions = { range: { offset: start } };
-      }
-    }
-  }
-
-  const object = await bucket.get(key, getOptions);
   if (!object) {
     return new Response("Not found", { status: 404 });
   }
 
+  // --- NEW: HANDLE 304 NOT MODIFIED ---
+  // If `onlyIf` was passed and the ETag matches, R2 returns
+  // an object with status 304. We must return a 304 response.
+  if (object.status === 304) {
+    return new Response(null, {
+      status: 304,
+      headers: {
+        "Cache-Control": "public, max-age=3600",
+        "ETag": object.httpEtag, // Pass back the ETag
+      },
+    });
+  }
+
+  // --- STANDARD RESPONSE (200 or 206) ---
   const headers = new Headers();
   object.writeHttpMetadata(headers);
   headers.set("Cache-Control", "public, max-age=3600");
@@ -64,27 +63,24 @@ export async function onRequest(context) {
     headers.set("Content-Type", guessContentType(key));
   }
 
-  // if R2 actually served a range, tell the browser
+  // R2 automatically sets object.range if a range was served
+  const status = object.range ? 206 : 200;
+
+  // The 'object' from R2 is already a complete Response
+  // when a range is requested, but for clarity and to
+  // ensure our headers are right, we construct a new one.
+  
+  // If R2 served a range, it populates object.range
   if (object.range) {
     const { offset, length, size } = object.range;
     headers.set(
       "Content-Range",
       `bytes ${offset}-${offset + length - 1}/${size}`
     );
-    headers.set("Content-Length", String(length));
-    return new Response(object.body, {
-      status: 206,
-      headers,
-    });
-  }
-
-  // full file case
-  if (typeof object.size === "number") {
-    headers.set("Content-Length", String(object.size));
   }
 
   return new Response(object.body, {
-    status: 200,
+    status,
     headers,
   });
 
