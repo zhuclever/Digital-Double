@@ -1994,7 +1994,7 @@ const projects = [
             <strong>Diffusion models</strong> — rebuilding images from noise, echoing how perception reconstructs meaning.`
         },
         {
-            title: '<span class="project-subtitle">E8 ∞ E8</span>',
+            title: '<span class="project-subtitle">E8∞E8</span>',
             imageClass: 'after-title-media',
             previewImages: ['./Projects/Dasul/ExhibitionDocu/exhibition_docu_compressed_3.webp'],
             fullImages: ['./Projects/Dasul/ExhibitionDocu/exhibition_docu_3.webp']
