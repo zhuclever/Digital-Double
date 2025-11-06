@@ -2543,7 +2543,7 @@ async function showProject(projectEntries) {
 
         requestAnimationFrame(() => {
             if (fastforwardButton.classList.contains('on')) fastforwardButton.classList.remove('on');
-            messageMinTypingDuration = 1270;
+            messageMinTypingDuration = 1300;
 
             setTimeout(() => {
                 document.querySelectorAll('.message.bot').forEach(mb => {
@@ -2604,11 +2604,11 @@ function applyModelViewerAttributes(element, attributeString) {
 
 
 
-let messageMinTypingDuration = 1270;
+let messageMinTypingDuration = 1300;
 const fastforwardButton = document.querySelector('.fast-message-button');
 fastforwardButton.addEventListener('click', (e)=>{
     e.target.classList.remove('on');
-    messageMinTypingDuration = 500;
+    messageMinTypingDuration = 550;
 });
 
 
