@@ -30,20 +30,21 @@ const glassSurfaceSettings = {
             greenOffset: 12,
             blueOffset: 20,
             mixBlendMode: 'difference',
-            maxFilterResolution: 750,
-            minFilterResolution: 500,
+            maxFilterResolution: 600,
+            minFilterResolution: 400,
             getQualityMultiplier: () => (qualityState.mode === 'recovery' ? 0.7 : 1)
         },
         mediaOverrides: {
             borderWidth: 0.13,
             maxFilterResolution: 5,
             minFilterResolution: 5,
-            disableFilterAbove: 350
+            disableFilterAbove: 100
         },
         modelOverrides: {
             borderWidth: 0.13,
             maxFilterResolution: 50,
             minFilterResolution: 30,
+            disableFilterAbove: 700
         }
     },
     typingIndicator: {
@@ -2354,6 +2355,9 @@ async function showProject(projectEntries) {
 
     mannualScrollOn = false;
 
+    //fastforward message speed button appear
+    fastforwardButton.classList.add('on');
+
     const buttons = document.querySelectorAll('.project-button');
     buttons.forEach(btn => btn.classList.add('disabled'));
 
@@ -2538,6 +2542,9 @@ async function showProject(projectEntries) {
         }
 
         requestAnimationFrame(() => {
+            if (fastforwardButton.classList.contains('on')) fastforwardButton.classList.remove('on');
+            messageMinTypingDuration = 1270;
+
             setTimeout(() => {
                 document.querySelectorAll('.message.bot').forEach(mb => {
                     mb.style.transform = '';
@@ -2597,6 +2604,14 @@ function applyModelViewerAttributes(element, attributeString) {
 
 
 
+let messageMinTypingDuration = 1270;
+const fastforwardButton = document.querySelector('.fast-message-button');
+fastforwardButton.addEventListener('click', (e)=>{
+    e.target.classList.remove('on');
+    messageMinTypingDuration = 500;
+});
+
+
 // Enhanced message timing with preloading
 async function addMessageWithParallelTiming(sender, type, content, welcome = false) {
     // Start typing indicator immediately
@@ -2610,9 +2625,9 @@ async function addMessageWithParallelTiming(sender, type, content, welcome = fal
     // Create a promise that resolves after minimum typing duration
     let minTypingDuration;
     if(welcome) {
-         minTypingDuration = delay(2000);
+         minTypingDuration = delay(1500);
     }
-    else minTypingDuration = delay(1600);
+    else minTypingDuration = delay(messageMinTypingDuration);
     
     const messageContent = document.createElement('div');
     messageContent.className = `message-content ${type}`;
@@ -3541,7 +3556,7 @@ window.whenEffectsReady().then(({ canvas, webgl }) => {
 //listen for likely hardware acceleration off
 document.addEventListener('hardwareaccelerationdisabled', () => {
   // Drop features, show a warning, etc.
-  console.log("Hardware acceleration likely be off.")
+  console.log("Hardware acceleration likely off.")
   const notifyContainer = document.querySelector('.notification-container');
   if(!notifyContainer.classList.contains('on')){
     notifyContainer.classList.add('on');

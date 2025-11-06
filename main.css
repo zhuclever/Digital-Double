@@ -80,7 +80,7 @@ button{
     justify-content: center;
 
     animation-name: none;
-    animation-duration: 3s;
+    animation-duration: 2s;
     animation-fill-mode: forwards;
     animation-timing-function: ease-out;
 }
@@ -176,6 +176,33 @@ button{
     -o-transition: opacity 0.7s ease-out;
 }
 
+.fast-message-button{
+    /*display: none;
+    */position: fixed;
+    top: 0.85rem;
+    right: calc(1.55rem + 14px);
+    font-size: 1.75rem;
+    color: rgb(255, 255, 255);
+    cursor: pointer;
+    user-select: none;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+    -webkit-transition: opacity 0.5s ease;
+    -moz-transition: opacity 0.5s ease;
+    -ms-transition: opacity 0.5s ease;
+    -o-transition: opacity 0.5s ease;
+    opacity: 0;
+}
+
+.fast-message-button:hover{
+    color: rgb(158, 158, 158);
+}
+
+.fast-message-button.on{
+    /* display: block; */
+    pointer-events: all;
+    opacity: 1;
+}
 
 /* Ripple Grid Background */
 #rippleGridBackground {
